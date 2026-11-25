@@ -4,7 +4,11 @@ import { BookingResult } from './public/BookingResult';
 import { Landing } from './public/Landing';
 import { AdminApp } from './staff/admin/AdminApp';
 import { DeskPage } from './staff/desk/DeskPage';
+import { SetPassword } from './staff/SetPassword';
 import './styles/global.css';
+
+// Supabase invite / password-reset links land with #access_token=…&type=invite|recovery (read before the router sees it).
+const authLinkType = /type=(invite|recovery)/.exec(typeof window !== 'undefined' ? window.location.hash : '')?.[1] ?? null;
 
 const now = () => new Date().toISOString();
 
@@ -21,6 +25,9 @@ function BookingRoute() {
 
 export default function App() {
   const api = getApi();
+  if (authLinkType && api.setPassword) {
+    return <SetPassword setPassword={api.setPassword.bind(api)} onDone={() => { window.location.hash = '#/admin'; window.location.reload(); }} />;
+  }
   return (
     <HashRouter>
       <DemoRibbon />

@@ -1,0 +1,9 @@
+# Supabase CLI config (used with `supabase link` + `supabase functions deploy`).
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.revolut-webhook]
+verify_jwt = false
+
+[functions.staff-actions]
+verify_jwt = false   # the function checks the caller's staff role itself

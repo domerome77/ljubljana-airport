@@ -63,4 +63,4 @@ export interface StaffApi {
   inviteStaff(email: string, role: StaffRole, displayName: string): Promise<void>;
 }
 
-export type Api = PublicApi & StaffApi & { isDemo: boolean };
+export type Api = PublicApi & StaffApi & { isDemo: boolean; setPassword?: (pw: string) => Promise<void> };

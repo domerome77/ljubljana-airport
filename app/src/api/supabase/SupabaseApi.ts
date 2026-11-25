@@ -16,6 +16,7 @@ export interface SupabaseLike {
     signInWithPassword(c: { email: string; password: string }): Promise<{ data: { user: { id: string; email?: string } | null }; error: unknown }>;
     signOut(): Promise<{ error: unknown }>;
     getSession(): Promise<{ data: { session: { user: { id: string } } | null } }>;
+    updateUser?(a: { password: string }): Promise<{ error: unknown }>;
   };
 }
 
@@ -130,6 +131,11 @@ export class SupabaseApi implements Api {
   }
 
   async signOut(): Promise<void> { await this.sb.auth.signOut(); }
+
+  async setPassword(pw: string): Promise<void> {
+    const r = await this.sb.auth.updateUser?.({ password: pw });
+    if (r?.error) throw await toApiError(r.error);
+  }
 
   async me(): Promise<StaffUser | null> {
     const { data } = await this.sb.auth.getSession();
