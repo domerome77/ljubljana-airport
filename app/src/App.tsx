@@ -1,5 +1,6 @@
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes, useParams, useSearchParams } from 'react-router-dom';
 import { getApi } from './api';
+import { BookingResult } from './public/BookingResult';
 import { Landing } from './public/Landing';
 import './styles/global.css';
 
@@ -7,7 +8,13 @@ const now = () => new Date().toISOString();
 
 function DemoRibbon() {
   if (!getApi().isDemo) return null;
-  return <div className="demo-ribbon" role="note">DEMO<span>test data · no real payments</span></div>;
+  return <div className="demo-ribbon no-print" role="note">DEMO<span>test data · no real payments</span></div>;
+}
+
+function BookingRoute() {
+  const { id = '' } = useParams();
+  const [q] = useSearchParams();
+  return <BookingResult api={getApi()} id={id} token={q.get('t') ?? ''} demo={getApi().isDemo && q.get('demo') === 'pay'} />;
 }
 
 export default function App() {
@@ -16,6 +23,7 @@ export default function App() {
     <HashRouter>
       <DemoRibbon />
       <Routes>
+        <Route path="/booking/:id" element={<BookingRoute />} />
         <Route path="*" element={<Landing api={api} now={now} />} />
       </Routes>
     </HashRouter>

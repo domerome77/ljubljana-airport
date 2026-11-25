@@ -96,3 +96,15 @@
 .site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 24px; padding-bottom: 24px; }
 .site-footer img { height: 24px; width: auto; }
 .site-footer a { color: var(--on-dark-muted); }
+
+.checkout { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--dark-3); padding-top: 16px; }
+.checkout-title { margin: 0; font-size: 18px; font-weight: 800; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+.input { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; color: var(--on-dark-muted); }
+.input em { font-weight: 500; font-style: normal; color: var(--on-dark-faint); }
+.input input { font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); background: #fff; border: 2px solid transparent; border-radius: var(--radius-s); padding: 11px 12px; min-height: 48px; }
+.input input:focus { border-color: var(--pink); outline: none; }
+.input small { font-weight: 500; color: var(--on-dark-faint); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--on-dark-muted); cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: var(--pink); margin-top: 1px; flex: none; }
+.step-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }

@@ -3,6 +3,7 @@ import type { PublicApi } from '../api/Api';
 import { formatEurShort } from '../domain/money';
 import '../styles/landing.css';
 import { FAQ, ROUTE_CARDS, STEPS } from './content';
+import { CheckoutForm } from './CheckoutForm';
 import { SearchCard } from './SearchCard';
 import { useBookingSearch } from './useBookingSearch';
 
@@ -23,6 +24,7 @@ function useTick(now: () => string, ms = 30_000): string {
 
 export function Landing({ api, now }: { api: PublicApi; now: () => string }) {
   const search = useBookingSearch(api);
+  const [step, setStep] = useState<'search' | 'details'>('search');
   const nowIso = useTick(now);
   const shared = search.departures.map((d) => d.sharedFromPrice).filter((x): x is number => x !== null);
   const priv = search.departures.map((d) => d.privatePrice).filter((x): x is number => x !== null);
@@ -61,7 +63,23 @@ export function Landing({ api, now }: { api: PublicApi; now: () => string }) {
               <h1>Airport transfers</h1>
               <p className="sub">Ljubljana Airport → Ljubljana &amp; Bled · door to door</p>
             </div>
-            <SearchCard search={search} now={nowIso} />
+            <SearchCard search={search} now={nowIso}>
+              {search.selectedId && step === 'search' && (
+                <button type="button" className="btn btn-primary btn-block" disabled={!search.quote} onClick={() => setStep('details')}>
+                  Continue
+                </button>
+              )}
+              {search.selectedId && step === 'details' && (
+                <>
+                  <CheckoutForm
+                    key={`${search.selectedId}-${search.product}-${search.passengers}`}
+                    api={api} departureId={search.selectedId} product={search.product} passengers={search.passengers}
+                    quote={search.quote} onRefresh={() => void search.refresh()}
+                  />
+                  <button type="button" className="link-btn" style={{ color: '#c9d2de' }} onClick={() => setStep('search')}>← Change departure</button>
+                </>
+              )}
+            </SearchCard>
           </div>
           <div className="hero-media" aria-hidden="true">
             <img src={asset('hero-van-terminal.png')} alt="" />

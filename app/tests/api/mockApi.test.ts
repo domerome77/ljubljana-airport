@@ -126,3 +126,10 @@ test('repeatDeparture creates one per selected weekday in range', async () => {
   const n = await api.repeatDeparture(d.id, '2026-11-30', '2026-12-13', [1, 2, 3, 4, 5]);
   expect(n).toBe(10);
 });
+
+test('demo seed prices Bled with its own tier template', async () => {
+  const api = new MockApi({ now: () => T0, storage: memoryStorage(), seed: 'demo' });
+  const bled = await api.listDepartures('LJU-BLED');
+  expect(bled.length).toBeGreaterThan(0);
+  expect(Math.min(...bled.map((d) => d.sharedFromPrice ?? 99))).toBeGreaterThanOrEqual(22);
+});

@@ -7,7 +7,10 @@ export function defaultSettings(): Settings {
   return {
     defaultSeatPrice: { 'LJU-LJ': 14, 'LJU-BLED': 25 },
     defaultPrivatePrice: { 'LJU-LJ': 70, 'LJU-BLED': 120 },
-    tierTemplate: [{ seatCount: 3, pricePerSeat: 12 }, { seatCount: 3, pricePerSeat: 14 }],
+    tierTemplate: {
+      'LJU-LJ': [{ seatCount: 3, pricePerSeat: 12 }, { seatCount: 3, pricePerSeat: 14 }],
+      'LJU-BLED': [{ seatCount: 3, pricePerSeat: 22 }, { seatCount: 3, pricePerSeat: 25 }],
+    },
     minSeatPrice: 5, maxSeatPrice: 60, minPrivatePrice: 30, maxPrivatePrice: 400,
     groupDiscounts: [{ minPassengers: 3, percent: 5 }, { minPassengers: 5, percent: 10 }],
     defaultSalesCloseMinutes: 10, holdMinutes: 15, maxPassengersOnline: 8,
@@ -73,7 +76,7 @@ export function demoState(nowIso: string): DemoState {
         const dep: Departure = {
           id: uuid(), routeId: route.id, vehicleId: v.id, departsAt, capacity: v.seats, sellShared: true, sellPrivate: true,
           privatePrice: null, salesCloseMinutes: s.settings.defaultSalesCloseMinutes, blockedSeats: i % 5 === 2 ? 2 : 0,
-          blockedNote: i % 5 === 2 ? 'Sold via GoOpti' : undefined, status: 'scheduled', tiers: s.settings.tierTemplate.map((x) => ({ ...x })),
+          blockedNote: i % 5 === 2 ? 'Sold via GoOpti' : undefined, status: 'scheduled', tiers: s.settings.tierTemplate[route.code].map((x) => ({ ...x })),
         };
         s.departures.push(dep);
         const sold = [0, 3, 1, 5, 0, 2][i % 6];

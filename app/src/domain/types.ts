@@ -21,7 +21,7 @@ export interface CompanyInfo { name: string; address: string; vatId: string; reg
 export interface Settings {
   defaultSeatPrice: Record<RouteCode, number>;
   defaultPrivatePrice: Record<RouteCode, number>;
-  tierTemplate: PriceTier[];
+  tierTemplate: Record<RouteCode, PriceTier[]>;
   minSeatPrice: number; maxSeatPrice: number; minPrivatePrice: number; maxPrivatePrice: number;
   groupDiscounts: GroupDiscount[];
   defaultSalesCloseMinutes: number; holdMinutes: number; maxPassengersOnline: number;

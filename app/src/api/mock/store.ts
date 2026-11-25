@@ -17,7 +17,7 @@ export interface DemoState {
   emailLog: EmailLogEntry[];
 }
 
-export const STATE_KEY = 'goopti-lju-demo-v1';
+export const STATE_KEY = 'goopti-lju-demo-v2';
 export const SESSION_KEY = 'goopti-lju-demo-session';
 
 export function memoryStorage(): StorageLike {

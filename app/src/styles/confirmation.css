@@ -1,0 +1,51 @@
+.confirmation { background: #fff; color: var(--ink); border: 2px solid var(--line); border-radius: var(--radius); padding: clamp(18px, 3vw, 28px);
+  display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow); }
+.conf-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.conf-kicker { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--pink-ink); }
+.conf-route { margin: 4px 0; font-size: clamp(22px, 3vw, 28px); font-weight: 800; }
+.conf-when { font-size: 18px; } .conf-when strong { font-size: 26px; font-weight: 800; } .conf-when span { font-size: 13px; color: var(--muted); }
+.conf-qr { width: 112px; height: 112px; flex: none; image-rendering: pixelated; }
+.conf-plate-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--dark); color: #fff; border-radius: 12px; padding: 14px 18px; }
+.conf-plate-box span { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--on-dark-muted); }
+.conf-plate { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: clamp(28px, 6vw, 40px); letter-spacing: .06em; background: #fff; color: #111;
+  padding: 2px 14px; border-radius: 6px; border: 3px solid #111; box-shadow: inset 10px 0 0 #1a47b8; padding-left: 22px; }
+.conf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0; }
+.conf-grid dt { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.conf-grid dd { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
+.conf-ref { font-family: ui-monospace, Menlo, monospace; }
+.conf-address { margin: 0; background: var(--pink-soft); color: var(--pink-ink); font-weight: 700; border-radius: 10px; padding: 12px 14px; }
+.conf-map { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.conf-map img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: var(--grey-bg); }
+.conf-map figcaption { font-size: 15px; color: var(--ink-2); }
+.conf-foot { margin: 0; font-size: 13px; color: var(--muted); }
+
+.result-page { background: var(--soft); min-height: 100vh; padding: clamp(16px, 4vw, 48px) var(--gutter); }
+.result-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.result-ok h1, .result-wait h1, .result-fail h1 { margin: 0 0 6px; font-size: clamp(24px, 4vw, 34px); font-weight: 800; }
+.result-ok p, .result-wait p, .result-fail p { margin: 0 0 12px; color: var(--muted); }
+.result-wait, .result-fail { background: #fff; border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); text-align: center; }
+.spinner { display: inline-block; width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--pink); animation: spin 0.9s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+.demo-pay { background: #191c1f; color: #fff; border-radius: 18px; padding: 28px; text-align: center; box-shadow: var(--shadow-lg); }
+.demo-pay h1 { font-size: 44px; margin: 8px 0; }
+.demo-pay p { color: #b9c0c8; }
+.demo-pay-kicker { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #8fa0ff; }
+.demo-pay-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 18px 0 8px; }
+.demo-pay .btn-ghost { color: #fff; border-color: #444; }
+.muted { color: var(--muted); font-size: 14px; }
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: #fff !important; }
+  body * { visibility: hidden; }
+  .confirmation, .confirmation * { visibility: visible; }
+  .confirmation { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: 1px solid #999; }
+  .demo-ribbon, .no-print { display: none !important; }
+  .conf-plate-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.thermal .confirmation { width: 72mm; padding: 2mm; border: 0; gap: 6px; font-size: 11px; }
+  body.thermal .conf-head { flex-direction: column; align-items: center; text-align: center; }
+  body.thermal .conf-route { font-size: 16px; } body.thermal .conf-when strong { font-size: 20px; }
+  body.thermal .conf-plate { font-size: 22px; } body.thermal .conf-grid { grid-template-columns: 1fr 1fr; }
+  body.thermal .conf-map img { max-height: 40mm; object-fit: contain; }
+}
