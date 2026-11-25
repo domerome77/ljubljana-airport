@@ -72,3 +72,8 @@ table.data tr:last-child td { border-bottom: 0; }
   .manifest-print, .manifest-print * { visibility: visible; }
   .manifest-print { position: absolute; left: 0; top: 0; width: 100%; }
 }
+.desk-card .fields { grid-template-columns: 1fr 1fr; }
+.desk-card .fields .field-from { grid-column: 1 / -1; }
+.tab-toggle { display: flex; gap: 4px; background: var(--dark-2); padding: 4px; border-radius: 10px; }
+.tab-toggle button { border: 0; background: transparent; color: #d8dde4; font-weight: 700; padding: 8px 14px; border-radius: 7px; cursor: pointer; }
+.tab-toggle button[aria-pressed='true'] { background: #fff; color: var(--ink); }

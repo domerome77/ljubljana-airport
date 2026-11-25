@@ -6,11 +6,15 @@ import { addDaysYmd, formatLocal, localYmd, toUtcFromLocal } from '../../domain/
 import { useLoad } from '../useLoad';
 import { SeatBar, SeatLegend, seatStats } from './SeatBar';
 
+function Wrap({ to, ...rest }: { to: string | null } & React.HTMLAttributes<HTMLElement>) {
+  return to ? <Link to={to} {...rest} /> : <div {...rest} />;
+}
+
 export function dayRange(ymd: string): [string, string] {
   return [toUtcFromLocal(ymd, '00:00'), toUtcFromLocal(addDaysYmd(ymd, 1), '00:00')];
 }
 
-export function TodayBoard({ api, now, linkBase = '/admin' }: { api: Api; now: () => string; linkBase?: string }) {
+export function TodayBoard({ api, now, linkBase = '/admin' }: { api: Api; now: () => string; linkBase?: string | null }) {
   const [day, setDay] = useState(localYmd(now()));
   const { data, error } = useLoad(() => api.listDeparturesAdmin(...dayRange(day)), [api, day]);
   const list = data ?? [];
@@ -32,11 +36,11 @@ export function TodayBoard({ api, now, linkBase = '/admin' }: { api: Api; now: (
       <SeatLegend />
       {error && <p className="notice notice-bad">{error}</p>}
       {list.length === 0 ? (
-        <div className="empty-light">No departures on this day. <Link to={`${linkBase}/departures`}>Add departures</Link></div>
+        <div className="empty-light">No departures on this day.{linkBase && <> <Link to={`${linkBase}/departures`}>Add departures</Link></>}</div>
       ) : (
         <div className="board">
           {sorted.map((d) => (
-            <Link key={d.id} to={`${linkBase}/manifest/${d.id}`} data-testid={`board-${d.id}`}
+            <Wrap key={d.id} to={linkBase ? `${linkBase}/manifest/${d.id}` : null} data-testid={`board-${d.id}`}
               className={`board-card${d.problems.length ? ' problem' : ''}${d.status === 'cancelled' ? ' cancelled' : ''}`} style={{ color: 'inherit', textDecoration: 'none' }}>
               <div className="board-top">
                 <span className="board-time">{formatLocal(d.departsAt, 'time')}</span>
@@ -47,7 +51,7 @@ export function TodayBoard({ api, now, linkBase = '/admin' }: { api: Api; now: (
               <div className="board-stats">{seatStats(d)} · {formatEur(d.revenue)}</div>
               {d.blockedNote && d.blockedSeats > 0 && <div className="board-stats">Blocked: {d.blockedNote}</div>}
               {d.problems.map((p) => <div key={p} className="notice notice-bad">{p}</div>)}
-            </Link>
+            </Wrap>
           ))}
         </div>
       )}
