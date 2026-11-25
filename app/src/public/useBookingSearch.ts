@@ -14,7 +14,8 @@ export interface BookingSearch {
   refresh: () => Promise<void>;
 }
 
-export function useBookingSearch(api: PublicApi, refreshMs = 30_000): BookingSearch {
+/** lockSelection: keep the chosen departure (e.g. while the customer fills in the checkout form) instead of auto-switching. */
+export function useBookingSearch(api: PublicApi, refreshMs = 30_000, lockSelection = false): BookingSearch {
   const [route, setRoute] = useState<RouteCode>('LJU-LJ');
   const [product, setProduct] = useState<Product>('shared');
   const [passengers, setPassengers] = useState(1);
@@ -46,11 +47,12 @@ export function useBookingSearch(api: PublicApi, refreshMs = 30_000): BookingSea
 
   // keep a valid selection: nearest departure that fits the request
   useEffect(() => {
+    if (lockSelection && selectedId) return;
     const current = departures.find((d) => d.id === selectedId);
     if (current && fits(current, product, passengers)) return;
     const first = visibleFor(departures, product).find((d) => fits(d, product, passengers));
     setSelectedId(first?.id ?? null);
-  }, [departures, product, passengers, selectedId]);
+  }, [departures, product, passengers, selectedId, lockSelection]);
 
   useEffect(() => {
     let alive = true;

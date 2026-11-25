@@ -1,6 +1,6 @@
 import { ApiError, type ApiErrorCode } from '../Api';
 import type {
-  Api, BookingRow, DepartureAdminView, DepartureInput, HoldInput, HoldResult, PublicBookingView, StaffUser, VehicleInput,
+  Api, BookingRow, DepartureAdminView, DepartureInput, DeskBookInput, HoldInput, HoldResult, PublicBookingView, StaffUser, VehicleInput,
 } from '../Api';
 import type {
   Booking, BookingStatus, Departure, Product, PublicDeparture, Quote, Route, RouteCode, Settings, StaffRole, Vehicle,
@@ -168,8 +168,8 @@ export class SupabaseApi implements Api {
   }
 
   async saveDeparture(d: DepartureInput): Promise<Departure> {
-    const r = await this.call<Departure & { vehicleChanged: boolean }>('save_departure', { p: d });
-    if (r.vehicleChanged) this.notify({ action: 'notify-vehicle-change', departureId: r.id });
+    const r = await this.call<Departure & { vehicleChanged: boolean; scheduleChanged?: boolean }>('save_departure', { p: d });
+    if (r.vehicleChanged || r.scheduleChanged) this.notify({ action: 'notify-vehicle-change', departureId: r.id });
     return toDeparture(r);
   }
 
@@ -192,9 +192,10 @@ export class SupabaseApi implements Api {
     return (rows ?? []).map(toBooking);
   }
 
-  async deskBook(input: HoldInput & { paymentMethod: 'desk_card' | 'desk_cash' }): Promise<{ bookingId: string; token: string }> {
+  async deskBook(input: DeskBookInput): Promise<{ bookingId: string; token: string }> {
     const r = await this.call<{ booking: Booking }>('desk_book', {
       p_departure: input.departureId, p_product: input.product, p_passengers: input.passengers, p_buyer: input.buyer, p_method: input.paymentMethod,
+      p_expected_amount: input.expectedAmount ?? null,
     });
     if (input.buyer.email) this.notify({ action: 'send-booking-emails', bookingId: r.booking.id });
     return { bookingId: r.booking.id, token: r.booking.token };

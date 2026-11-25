@@ -61,6 +61,7 @@ create table bookings (
   hold_expires_at timestamptz,
   payment_method text check (payment_method in ('revolut', 'desk_card', 'desk_cash')),
   revolut_order_id text,
+  revolut_checkout_url text,
   paid_at timestamptz,
   created_by uuid,
   created_at timestamptz not null default now()

@@ -26,19 +26,28 @@ export function makeDeps(sb: SupabaseClient = serviceClient()): Deps {
   return {
     db: {
       async getHeldBooking(id, token): Promise<HeldBooking | null> {
-        const { data } = await sb.from('bookings').select('id, token, ref, amount, buyer, status, hold_expires_at, departures(routes(name))').eq('id', id).eq('token', token).maybeSingle();
+        const { data } = await sb.from('bookings').select('id, token, ref, amount, buyer, status, hold_expires_at, revolut_order_id, revolut_checkout_url, departures(routes(name))').eq('id', id).eq('token', token).maybeSingle();
         if (!data) return null;
         // deno-lint-ignore no-explicit-any
         const d = data as any;
-        return { id: d.id, token: d.token, ref: d.ref, amount: Number(d.amount), email: d.buyer?.email, status: d.status, holdExpiresAt: d.hold_expires_at, routeName: d.departures?.routes?.name ?? '' };
+        return { id: d.id, token: d.token, ref: d.ref, amount: Number(d.amount), email: d.buyer?.email, status: d.status, holdExpiresAt: d.hold_expires_at, routeName: d.departures?.routes?.name ?? '',
+          revolutOrderId: d.revolut_order_id, checkoutUrl: d.revolut_checkout_url };
       },
-      async setRevolutOrder(id, orderId) {
-        const { error } = await sb.from('bookings').update({ revolut_order_id: orderId }).eq('id', id);
+      async setRevolutOrder(id, orderId, checkoutUrl) {
+        const { error } = await sb.from('bookings').update({ revolut_order_id: orderId, revolut_checkout_url: checkoutUrl }).eq('id', id);
         if (error) throw new Error(error.message);
       },
       async findByRevolutOrder(orderId) {
         const { data } = await sb.from('bookings').select('id').eq('revolut_order_id', orderId).maybeSingle();
         return (data as { id: string } | null)?.id ?? null;
+      },
+      async findByRef(ref) {
+        const { data } = await sb.from('bookings').select('id').eq('ref', ref).maybeSingle();
+        return (data as { id: string } | null)?.id ?? null;
+      },
+      async hasSentConfirmation(bookingId) {
+        const { count } = await sb.from('email_log').select('id', { count: 'exact', head: true }).eq('booking_id', bookingId).eq('kind', 'confirmation').eq('status', 'sent');
+        return (count ?? 0) > 0;
       },
       markPaid: (id, method, orderId) => rpc(sb, 'mark_paid', { p_booking: id, p_method: method, p_revolut_order: orderId }),
       documents: (id) => rpc<Documents>(sb, 'booking_documents', { p_booking: id }),

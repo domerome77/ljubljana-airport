@@ -1,5 +1,6 @@
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { Landing } from '../../src/public/Landing';
 import { fakeApi, NOW } from './fakeApi';
 
@@ -65,4 +66,25 @@ test('departures are grouped by day', async () => {
 test('empty state when nothing is on sale', async () => {
   renderLanding(fakeApi({ listDepartures: async () => [] }));
   expect(await screen.findByText(/No vans on sale right now/)).toBeInTheDocument();
+});
+
+test('a sold-out error during checkout stays visible and the chosen departure is not swapped silently', async () => {
+  const { ApiError } = await import('../../src/api/Api');
+  const { deps: all } = await import('./fakeApi');
+  let calls = 0;
+  const api = fakeApi({
+    listDepartures: vi.fn(async (r) => (calls++ === 0 ? all[r] : all[r].filter((d) => d.id !== 'd1'))),
+    hold: vi.fn(async () => { throw new ApiError('SOLD_OUT'); }),
+  });
+  renderLanding(api);
+  await screen.findByRole('button', { name: /^14:30/ });
+  await userEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+  await userEvent.type(screen.getByLabelText('Full name'), 'Ana');
+  await userEvent.type(screen.getByLabelText('Email'), 'ana@example.com');
+  await userEvent.click(screen.getByLabelText(/I accept the/));
+  await userEvent.click(screen.getByRole('button', { name: /^Pay/ }));
+  expect(await screen.findByText('Those seats were just taken — please pick another departure')).toBeInTheDocument();
+  await waitFor(() => expect(api.listDepartures).toHaveBeenCalledTimes(2));
+  expect(screen.getByText('Those seats were just taken — please pick another departure')).toBeInTheDocument();
+  expect(screen.getByLabelText('Full name')).toHaveValue('Ana');
 });

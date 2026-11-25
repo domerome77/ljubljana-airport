@@ -135,6 +135,8 @@ create or replace function quote(p_departure uuid, p_product text, p_passengers 
 language plpgsql stable security definer set search_path = public as $$
 declare d departures;
 begin
+  if p_passengers is null or p_passengers < 1 or p_passengers > 60 then perform _err('INVALID', 'Invalid number of passengers'); end if;
+  if p_product not in ('shared', 'private') then perform _err('INVALID', 'Unknown product'); end if;
   select * into d from departures where id = p_departure;
   if not found then perform _err('NOT_FOUND', 'Departure not found'); end if;
   return _quote(d, p_product, p_passengers) || jsonb_build_object('seatsLeft', _left(d));
@@ -152,7 +154,7 @@ begin
   if coalesce(trim(p_buyer->>'name'), '') = '' then perform _err('INVALID', 'Name is required'); end if;
   if p_channel = 'web' and (email is null or email !~ re) then perform _err('INVALID', 'Email is required'); end if;
   if email is not null and email !~ re then perform _err('INVALID', 'Email is invalid'); end if;
-  if p_pax is null or p_pax < 1 then perform _err('INVALID', 'Invalid number of passengers'); end if;
+  if p_pax is null or p_pax < 1 or p_pax > 60 then perform _err('INVALID', 'Invalid number of passengers'); end if;
   if p_channel = 'web' and p_product = 'shared' and p_pax > (s->>'maxPassengersOnline')::int then
     perform _err('INVALID', format('Online bookings are limited to %s passengers', s->>'maxPassengersOnline'));
   end if;
@@ -264,8 +266,8 @@ begin
   end if;
   select * into d from departures where id = b.departure_id for update;
   expired := b.status <> 'held' or b.hold_expires_at <= now();
-  fits := _left(d, b.id) >= b.seats_taken;
-  update bookings set status = case when expired and not fits then 'paid_overbooked' else 'paid' end,
+  fits := b.status <> 'cancelled' and d.status = 'scheduled' and _left(d, b.id) >= b.seats_taken;
+  update bookings set status = case when not fits and (expired or d.status <> 'scheduled') then 'paid_overbooked' else 'paid' end,
     payment_method = p_method, revolut_order_id = coalesce(p_revolut_order, revolut_order_id), paid_at = now(), hold_expires_at = null
     where id = b.id returning * into b;
   inv := _issue(b, 'invoice');
@@ -276,13 +278,16 @@ end $$;
 create or replace function mark_paid(p_booking uuid, p_method text, p_revolut_order text) returns jsonb
 language sql security definer set search_path = public as $$ select _mark_paid(p_booking, p_method, p_revolut_order) $$;
 
-create or replace function desk_book(p_departure uuid, p_product text, p_passengers int, p_buyer jsonb, p_method text) returns jsonb
+create or replace function desk_book(p_departure uuid, p_product text, p_passengers int, p_buyer jsonb, p_method text, p_expected_amount numeric default null) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare b bookings;
 begin
   perform _require(array['desk', 'admin']);
   if p_method not in ('desk_card', 'desk_cash') then perform _err('INVALID', 'Choose card or cash'); end if;
   b := _create_hold(p_departure, p_product, p_passengers, p_buyer, 'desk');
+  if p_expected_amount is not null and b.amount <> p_expected_amount then
+    perform _err('CONFLICT', format('The price changed to %s € — please check the amount with the passenger and confirm again', to_char(b.amount, 'FM999990.00')));
+  end if;
   return _mark_paid(b.id, p_method, null);
 end $$;
 
@@ -332,7 +337,7 @@ create or replace function save_departure(p jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   existing departures; d departures; v vehicles; taken int := 0; blocked int := coalesce((p->>'blockedSeats')::int, 0);
-  close int := coalesce((p->>'salesCloseMinutes')::int, (_settings()->>'defaultSalesCloseMinutes')::int); changed boolean := false;
+  close int := coalesce((p->>'salesCloseMinutes')::int, (_settings()->>'defaultSalesCloseMinutes')::int); changed boolean := false; moved boolean := false;
 begin
   perform _require(array['admin']);
   perform _validate_prices(p);
@@ -346,6 +351,10 @@ begin
     if not found then perform _err('NOT_FOUND', 'Departure not found'); end if;
     taken := _taken(existing.id);
     changed := existing.vehicle_id <> v.id;
+    if existing.route_id <> p->>'routeId' and exists (select 1 from bookings where departure_id = existing.id and status in ('paid', 'paid_overbooked')) then
+      perform _err('CONFLICT', 'This departure has paid bookings — the route cannot be changed. Create a new departure instead.');
+    end if;
+    moved := existing.departs_at <> (p->>'departsAt')::timestamptz and exists (select 1 from bookings where departure_id = existing.id and status in ('paid', 'paid_overbooked'));
     if changed and v.seats < taken + blocked then
       perform _err('CONFLICT', format('New vehicle has %s seats but %s are already taken', v.seats, taken + blocked));
     end if;
@@ -365,8 +374,9 @@ begin
       blocked_note = nullif(p->>'blockedNote', ''), tiers = coalesce(p->'tiers', '[]'), notes = nullif(p->>'notes', ''),
       vehicle_changed_at = case when changed then now() else vehicle_changed_at end
     where id = existing.id returning * into d;
+    update bookings set seats_taken = d.capacity where departure_id = d.id and product = 'private' and status in ('held', 'paid', 'paid_overbooked');
   end if;
-  return _departure_json(d) || jsonb_build_object('vehicleChanged', changed);
+  return _departure_json(d) || jsonb_build_object('vehicleChanged', changed, 'scheduleChanged', moved);
 end $$;
 
 create or replace function repeat_departure(p_template uuid, p_from date, p_to date, p_weekdays int[]) returns int
@@ -398,6 +408,7 @@ begin
   end if;
   update departures set status = 'cancelled' where id = p_id;
   if not found then perform _err('NOT_FOUND', 'Departure not found'); end if;
+  update bookings set status = 'expired', hold_expires_at = null where departure_id = p_id and status = 'held';
 end $$;
 
 create or replace function cancel_booking(p_booking uuid) returns jsonb

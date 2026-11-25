@@ -133,3 +133,35 @@ test('demo seed prices Bled with its own tier template', async () => {
   expect(bled.length).toBeGreaterThan(0);
   expect(Math.min(...bled.map((d) => d.sharedFromPrice ?? 99))).toBeGreaterThanOrEqual(22);
 });
+
+describe('review fixes (parity with SQL)', () => {
+  test('desk booking refuses when the price changed since the quote', async () => {
+    const { api, d } = await setup();
+    await api.signIn('desk@demo', 'demo');
+    expect(await codeOf(api.deskBook({ departureId: d.id, product: 'shared', passengers: 1, buyer: { name: 'W' }, channel: 'desk', paymentMethod: 'desk_card', expectedAmount: 99 }))).toBe('CONFLICT');
+    expect(await codeOf(api.deskBook({ departureId: d.id, product: 'shared', passengers: 1, buyer: { name: 'W' }, channel: 'desk', paymentMethod: 'desk_card', expectedAmount: 12 }))).toBe('OK');
+  });
+
+  test('cancelling a departure expires holds; late payment for a cancelled departure is flagged', async () => {
+    const { api, d } = await setup();
+    const h = await api.hold({ departureId: d.id, product: 'shared', passengers: 1, buyer, channel: 'web' });
+    await api.signIn('admin@demo', 'demo');
+    await api.cancelDeparture(d.id);
+    api.confirmPayment(h.bookingId);
+    const [b] = await api.listBookings({});
+    expect(b.status).toBe('paid_overbooked');
+  });
+
+  test('private booking follows a swap to a bigger van; route change with paid bookings is refused', async () => {
+    const { api, d, v } = await setup();
+    await api.signIn('admin@demo', 'demo');
+    const big = await api.saveVehicle({ internalName: 'Big', plate: 'LJ-BIG-1', seats: 12, active: true });
+    await api.deskBook({ departureId: d.id, product: 'private', passengers: 2, buyer: { name: 'P' }, channel: 'desk', paymentMethod: 'desk_card' });
+    await api.saveDeparture({ ...d, vehicleId: big.id });
+    expect(await api.listDepartures('LJU-LJ')).toHaveLength(0);
+    const routes = await api.listRoutes();
+    const bled = routes.find((r) => r.code === 'LJU-BLED')!;
+    expect(await codeOf(api.saveDeparture({ ...d, vehicleId: big.id, routeId: bled.id, tiers: [{ seatCount: 3, pricePerSeat: 22 }] }))).toBe('CONFLICT');
+    void v;
+  });
+});

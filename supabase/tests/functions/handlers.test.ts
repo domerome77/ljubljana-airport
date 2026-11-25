@@ -16,6 +16,8 @@ function deps(over: Partial<Deps['db']> = {}): Deps & { sent: { to: string; subj
       getHeldBooking: vi.fn(async () => ({ id: 'b1', token: 'tok', ref: 'LJU-AAA111', amount: 12, email: 'ana@example.com', status: 'held', holdExpiresAt: '2026-11-25T12:10:00Z', routeName: 'LJU → LJ' })),
       setRevolutOrder: vi.fn(async () => {}),
       findByRevolutOrder: vi.fn(async () => 'b1'),
+      findByRef: vi.fn(async () => null),
+      hasSentConfirmation: vi.fn(async () => true),
       markPaid: vi.fn(async () => ({ alreadyPaid: false })),
       documents: vi.fn(async () => ({ booking: { id: 'b1', token: 'tok', buyer: { name: 'Ana', email: 'ana@example.com' } }, view, invoice, creditNote: null })),
       bookingIdsOfDeparture: vi.fn(async () => ['b1']),
@@ -36,7 +38,7 @@ test('create-checkout charges the DB amount and stores the Revolut order id', as
   expect(r).toEqual({ status: 200, body: { checkoutUrl: 'https://checkout.revolut.com/payment-link/x' } });
   expect(d.revolut).toHaveBeenCalledWith(expect.objectContaining({ amountMinor: 1200, currency: 'EUR', reference: 'LJU-AAA111', email: 'ana@example.com',
     redirectUrl: 'https://site.test/app/#/booking/b1?t=tok' }));
-  expect(d.db.setRevolutOrder).toHaveBeenCalledWith('b1', 'ord_1');
+  expect(d.db.setRevolutOrder).toHaveBeenCalledWith('b1', 'ord_1', 'https://checkout.revolut.com/payment-link/x');
 });
 
 test('create-checkout refuses unknown or expired holds', async () => {
@@ -97,4 +99,36 @@ test('vehicle change re-sends updated tickets to every paid passenger', async ()
   await handleStaffAction(d, 'admin', { action: 'notify-vehicle-change', departureId: 'dep1' });
   expect(d.sent).toHaveLength(2);
   expect(d.sent[0].subject).toMatch(/^Updated: /);
+});
+
+test('a second checkout call reuses the existing Revolut order instead of creating a new one', async () => {
+  const d = deps({ getHeldBooking: vi.fn(async () => ({ id: 'b1', token: 'tok', ref: 'r', amount: 12, status: 'held', holdExpiresAt: '2026-11-25T12:10:00Z',
+    routeName: 'x', revolutOrderId: 'ord_0', checkoutUrl: 'https://checkout.revolut.com/payment-link/old' })) });
+  const r = await handleCreateCheckout(d, { bookingId: 'b1', token: 'tok' });
+  expect(r.body).toEqual({ checkoutUrl: 'https://checkout.revolut.com/payment-link/old' });
+  expect(d.revolut).not.toHaveBeenCalled();
+});
+
+test('webhook falls back to the booking ref when the order id is unknown', async () => {
+  const d = deps({ findByRevolutOrder: vi.fn(async () => null), findByRef: vi.fn(async () => 'b1') });
+  const body = '{"event":"ORDER_COMPLETED","order_id":"ord_x","merchant_order_ext_ref":"LJU-AAA111"}';
+  await handleWebhook(d, body, signed(body));
+  expect(d.db.findByRef).toHaveBeenCalledWith('LJU-AAA111');
+  expect(d.db.markPaid).toHaveBeenCalledWith('b1', 'revolut', 'ord_x');
+});
+
+test('a retried webhook sends the emails if the first attempt never did', async () => {
+  const d = deps({ markPaid: vi.fn(async () => ({ alreadyPaid: true })), hasSentConfirmation: vi.fn(async () => false) });
+  const body = '{"event":"ORDER_COMPLETED","order_id":"ord_1"}';
+  await handleWebhook(d, body, signed(body));
+  expect(d.sent).toHaveLength(2);
+});
+
+test('a broken invoice PDF still lets the ticket email go out', async () => {
+  const d = deps();
+  d.pdf = vi.fn(async () => { throw new Error('pdf boom'); });
+  const body = '{"event":"ORDER_COMPLETED","order_id":"ord_1"}';
+  expect((await handleWebhook(d, body, signed(body))).status).toBe(204);
+  expect(d.sent).toHaveLength(1);
+  expect(d.db.logEmail).toHaveBeenCalledWith(expect.objectContaining({ kind: 'invoice', status: 'failed', error: 'pdf boom' }));
 });

@@ -36,6 +36,7 @@ export interface DepartureAdminView extends Departure {
   soldSeats: number; heldSeats: number; seatsLeft: number; revenue: number; problems: string[];
 }
 
+export type DeskBookInput = HoldInput & { paymentMethod: 'desk_card' | 'desk_cash'; expectedAmount?: number };
 export type DepartureInput = Omit<Departure, 'id' | 'capacity' | 'status'> & { id?: string };
 export type VehicleInput = Omit<Vehicle, 'id'> & { id?: string };
 export type BookingRow = Booking & { departsAt: string; routeCode: RouteCode; plate: string };
@@ -54,7 +55,8 @@ export interface StaffApi {
   getSettings(): Promise<Settings>;
   saveSettings(s: Settings): Promise<void>;
   listBookings(q: { text?: string; fromIso?: string; toIso?: string; status?: BookingStatus }): Promise<BookingRow[]>;
-  deskBook(input: HoldInput & { paymentMethod: 'desk_card' | 'desk_cash' }): Promise<{ bookingId: string; token: string }>;
+  /** expectedAmount: the price shown/charged at the desk; the booking is refused (CONFLICT) if the live price differs. */
+  deskBook(input: DeskBookInput): Promise<{ bookingId: string; token: string }>;
   cancelBooking(id: string): Promise<void>;
   moveBooking(id: string, toDepartureId: string): Promise<void>;
   resendEmails(id: string): Promise<void>;

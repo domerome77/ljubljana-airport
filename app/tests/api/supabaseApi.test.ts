@@ -74,3 +74,14 @@ test('deskBook pays in SQL and asks the function to send emails only when an ema
   await api.deskBook({ departureId: 'd1', product: 'shared', passengers: 1, buyer: { name: 'A', email: 'a@b.co' }, channel: 'desk', paymentMethod: 'desk_cash' });
   expect(c.functions.invoke).toHaveBeenCalledWith('staff-actions', { body: { action: 'send-booking-emails', bookingId: 'b1' } });
 });
+
+test('deskBook passes the expected amount; a time change triggers passenger notification', async () => {
+  const c = client();
+  c.rpc.mockResolvedValueOnce({ data: { booking: { id: 'b1', token: 't' } }, error: null });
+  const api = new SupabaseApi(c);
+  await api.deskBook({ departureId: 'd1', product: 'shared', passengers: 1, buyer: { name: 'A' }, channel: 'desk', paymentMethod: 'desk_cash', expectedAmount: 12 });
+  expect(c.rpc).toHaveBeenLastCalledWith('desk_book', expect.objectContaining({ p_expected_amount: 12 }));
+  c.rpc.mockResolvedValueOnce({ data: { id: 'dep1', vehicleChanged: false, scheduleChanged: true, privatePrice: null }, error: null });
+  await api.saveDeparture({ routeId: 'r', vehicleId: 'v', departsAt: 'x', sellShared: true, sellPrivate: true, privatePrice: null, salesCloseMinutes: 10, blockedSeats: 0, tiers: [] });
+  expect(c.functions.invoke).toHaveBeenCalledWith('staff-actions', { body: { action: 'notify-vehicle-change', departureId: 'dep1' } });
+});

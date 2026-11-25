@@ -59,7 +59,7 @@ function DeskSell({ api, now }: { api: Api; now: () => string }) {
     if (wantsCompany) buyer.company = { ...company };
     setBusy(true);
     try {
-      const r = await api.deskBook({ departureId: search.selectedId, product: search.product, passengers: search.passengers, buyer, channel: 'desk', paymentMethod: method });
+      const r = await api.deskBook({ departureId: search.selectedId, product: search.product, passengers: search.passengers, buyer, channel: 'desk', paymentMethod: method, expectedAmount: search.quote?.amount });
       setTicket(await api.getBooking(r.bookingId, r.token));
       void search.refresh();
     } catch (err) {

@@ -40,7 +40,7 @@ create policy staff_read on staff for select to authenticated using (user_id = a
 revoke execute on all functions in schema public from public, anon, authenticated;
 grant execute on function list_departures(text), quote(uuid, text, int), hold_seats(uuid, text, int, jsonb, text),
   get_booking_public(uuid, text) to anon, authenticated;
-grant execute on function desk_book(uuid, text, int, jsonb, text), save_departure(jsonb), repeat_departure(uuid, date, date, int[]),
+grant execute on function desk_book(uuid, text, int, jsonb, text, numeric), save_departure(jsonb), repeat_departure(uuid, date, date, int[]),
   cancel_departure(uuid), cancel_booking(uuid), move_booking(uuid, uuid), admin_departures(timestamptz, timestamptz),
   admin_bookings(text, timestamptz, timestamptz, text), manifest(uuid), _is_staff(text[]) to authenticated;
 grant execute on all functions in schema public to service_role;

@@ -23,8 +23,8 @@ function useTick(now: () => string, ms = 30_000): string {
 }
 
 export function Landing({ api, now }: { api: PublicApi; now: () => string }) {
-  const search = useBookingSearch(api);
   const [step, setStep] = useState<'search' | 'details'>('search');
+  const search = useBookingSearch(api, 30_000, step === 'details');
   const nowIso = useTick(now);
   const shared = search.departures.map((d) => d.sharedFromPrice).filter((x): x is number => x !== null);
   const priv = search.departures.map((d) => d.privatePrice).filter((x): x is number => x !== null);

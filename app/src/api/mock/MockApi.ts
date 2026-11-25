@@ -1,6 +1,6 @@
 import { ApiError } from '../Api';
 import type {
-  Api, BookingRow, DepartureAdminView, DepartureInput, HoldInput, HoldResult, PublicBookingView, StaffUser, VehicleInput,
+  Api, BookingRow, DepartureAdminView, DepartureInput, DeskBookInput, HoldInput, HoldResult, PublicBookingView, StaffUser, VehicleInput,
 } from '../Api';
 import { isSellable, privateAvailable, seatsLeft } from '../../domain/availability';
 import { quotePrivate, quoteShared, seatPrice } from '../../domain/pricing';
@@ -112,8 +112,8 @@ export class MockApi implements Api {
     if (ACTIVE.includes(b.status)) return;
     const expired = b.status !== 'held' || (b.holdExpiresAt !== null && Date.parse(b.holdExpiresAt) <= Date.parse(this.now()));
     const d = this.dep(b.departureId);
-    const fits = this.left(d, b.id) >= b.seatsTaken;
-    b.status = expired && !fits ? 'paid_overbooked' : 'paid';
+    const fits = b.status !== 'cancelled' && d.status === 'scheduled' && this.left(d, b.id) >= b.seatsTaken;
+    b.status = !fits && (expired || d.status !== 'scheduled') ? 'paid_overbooked' : 'paid';
     b.paymentMethod = method;
     b.paidAt = this.now();
     b.holdExpiresAt = null;
@@ -308,6 +308,10 @@ export class MockApi implements Api {
     const existing = input.id ? this.dep(input.id) : null;
     const capacity = v.seats;
     const taken = existing ? this.takenActive(existing.id) : 0;
+    const hasPaid = !!existing && this.state.bookings.some((b) => b.departureId === existing.id && ACTIVE.includes(b.status));
+    if (existing && hasPaid && existing.routeId !== input.routeId) {
+      throw new ApiError('CONFLICT', 'This departure has paid bookings — the route cannot be changed. Create a new departure instead.');
+    }
     if (existing && existing.vehicleId !== v.id && capacity < taken + input.blockedSeats) {
       throw new ApiError('CONFLICT', `New vehicle has ${capacity} seats but ${taken + input.blockedSeats} are already taken`);
     }
@@ -319,8 +323,9 @@ export class MockApi implements Api {
       tiers: input.tiers.map((t) => ({ ...t })),
     };
     if (existing) {
-      const vehicleChanged = existing.vehicleId !== d.vehicleId;
+      const vehicleChanged = existing.vehicleId !== d.vehicleId || (hasPaid && existing.departsAt !== d.departsAt);
       Object.assign(existing, d);
+      for (const b of this.state.bookings) if (b.departureId === d.id && b.product === 'private' && b.status !== 'cancelled' && b.status !== 'expired') b.seatsTaken = d.capacity;
       if (vehicleChanged) {
         for (const b of this.state.bookings.filter((x) => x.departureId === d.id && ACTIVE.includes(x.status))) this.logEmail(b, 'update');
       }
@@ -355,6 +360,7 @@ export class MockApi implements Api {
       throw new ApiError('CONFLICT', 'This departure has paid bookings — move or cancel them first');
     }
     d.status = 'cancelled';
+    for (const b of this.state.bookings) if (b.departureId === id && b.status === 'held') { b.status = 'expired'; b.holdExpiresAt = null; }
     this.persist();
   }
 
@@ -384,9 +390,13 @@ export class MockApi implements Api {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
-  async deskBook(input: HoldInput & { paymentMethod: 'desk_card' | 'desk_cash' }): Promise<{ bookingId: string; token: string }> {
+  async deskBook(input: DeskBookInput): Promise<{ bookingId: string; token: string }> {
     this.requireRole('desk', 'admin');
     const b = this.createHold({ ...input, channel: 'desk' });
+    if (input.expectedAmount !== undefined && b.amount !== input.expectedAmount) {
+      this.state.bookings = this.state.bookings.filter((x) => x.id !== b.id);
+      throw new ApiError('CONFLICT', `The price changed to ${b.amount.toFixed(2)} € — please check the amount with the passenger and confirm again`);
+    }
     this.markPaid(b, input.paymentMethod);
     this.persist();
     return { bookingId: b.id, token: b.token };
