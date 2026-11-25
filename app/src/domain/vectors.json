@@ -1,0 +1,8 @@
+[
+  { "name": "tiers-cross", "tiers": [{"seatCount":3,"pricePerSeat":12},{"seatCount":5,"pricePerSeat":14},{"seatCount":10,"pricePerSeat":16}], "defaultPrice": 18, "alreadyTaken": 2, "passengers": 3, "discounts": [], "expectedAmount": 40 },
+  { "name": "beyond-tiers", "tiers": [{"seatCount":3,"pricePerSeat":12},{"seatCount":5,"pricePerSeat":14},{"seatCount":10,"pricePerSeat":16}], "defaultPrice": 18, "alreadyTaken": 17, "passengers": 2, "discounts": [], "expectedAmount": 34 },
+  { "name": "group-discount", "tiers": [{"seatCount":8,"pricePerSeat":14}], "defaultPrice": 14, "alreadyTaken": 0, "passengers": 5, "discounts": [{"minPassengers":3,"percent":5},{"minPassengers":5,"percent":10}], "expectedAmount": 63 },
+  { "name": "no-tiers", "tiers": [], "defaultPrice": 14, "alreadyTaken": 0, "passengers": 1, "discounts": [], "expectedAmount": 14 },
+  { "name": "rounding", "tiers": [{"seatCount":8,"pricePerSeat":13.33}], "defaultPrice": 14, "alreadyTaken": 0, "passengers": 3, "discounts": [{"minPassengers":3,"percent":5}], "expectedAmount": 37.99 },
+  { "name": "discount-below-threshold", "tiers": [], "defaultPrice": 25, "alreadyTaken": 4, "passengers": 2, "discounts": [{"minPassengers":3,"percent":5}], "expectedAmount": 50 }
+]
