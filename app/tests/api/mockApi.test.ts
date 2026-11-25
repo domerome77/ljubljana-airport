@@ -165,3 +165,10 @@ describe('review fixes (parity with SQL)', () => {
     void v;
   });
 });
+
+test('ticket uses the real LJU meeting-point map and shuttle points 1–2 directions', async () => {
+  const { defaultSettings } = await import('../../src/api/mock/seed');
+  const s = defaultSettings();
+  expect(s.meetingPoint.imageUrl).toBe('assets/meeting-point-lju.jpg');
+  expect(s.meetingPoint.text).toContain('GoOpti shuttle points 1–2');
+});

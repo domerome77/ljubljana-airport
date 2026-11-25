@@ -37,7 +37,7 @@ export function Confirmation({ booking, variant = 'screen' }: { booking: PublicB
       </dl>
       <p className="conf-address">Tell your driver your address in {city(booking)} when you board.</p>
       <figure className="conf-map">
-        <img src={assetUrl(booking.meetingPoint.imageUrl)} alt="Map of where the GoOpti vans are parked at Ljubljana Airport" />
+        <img src={assetUrl(booking.meetingPoint.imageUrl)} alt="Map of Ljubljana Airport: from arrivals past the GoOpti info desk, across the road to GoOpti shuttle points 1–2" />
         <figcaption><strong>Where to find the van:</strong> {booking.meetingPoint.text}</figcaption>
       </figure>
       <p className="conf-foot">Please be at the van 5 minutes before departure. Questions? {booking.supportPhone}</p>

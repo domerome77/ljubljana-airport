@@ -18,7 +18,7 @@ export const deps: Record<RouteCode, PublicDeparture[]> = {
 export const paidView: PublicBookingView = {
   ref: 'LJU-7K3F9Q', status: 'paid', routeCode: 'LJU-LJ', routeName: 'Ljubljana Airport → Ljubljana', destinationLabel: 'Ljubljana — any address',
   departsAt: '2026-11-25T13:30:00.000Z', product: 'shared', passengers: 2, amount: 24, lines: [{ label: '2 × 12.00 €', amount: 24 }],
-  plate: 'LJ-AB-123', meetingPoint: { imageUrl: 'assets/meeting-point-mock.svg', text: 'Turn right after arrivals.' },
+  plate: 'LJ-AB-123', meetingPoint: { imageUrl: 'assets/meeting-point-lju.jpg', text: 'Turn right after arrivals.' },
   supportPhone: '+386 00 000 000', buyerName: 'Ana Novak', holdExpiresAt: null,
 };
 

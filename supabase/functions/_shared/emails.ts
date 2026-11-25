@@ -42,7 +42,7 @@ export function renderConfirmationEmail(v: BookingView, o: { baseUrl: string; ti
   </table>
   <p style="background:#fff1f7;color:#c2185e;font-weight:700;border-radius:10px;padding:12px 14px">Tell your driver your address in ${city(v)} when you board.</p>
   <p style="margin:0 0 8px"><b>Where to find the van:</b> ${esc(v.meetingPoint.text)}</p>
-  <img src="${esc(abs(o.baseUrl, v.meetingPoint.imageUrl))}" alt="Map of the GoOpti van bay at Ljubljana Airport" style="width:100%;border-radius:10px;border:1px solid #e6e9ee">
+  <img src="${esc(abs(o.baseUrl, v.meetingPoint.imageUrl))}" alt="Map of Ljubljana Airport: from arrivals to GoOpti shuttle points 1-2" style="width:100%;border-radius:10px;border:1px solid #e6e9ee">
   <p style="text-align:center;margin:20px 0 4px"><a href="${esc(o.ticketUrl)}" style="background:${PINK};color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:10px;display:inline-block">Open your ticket (with QR code)</a></p>
   <p style="font-size:13px;color:#5b6675">Please be at the van 5 minutes before departure. Questions? ${esc(v.supportPhone)}. Your invoice follows in a separate email.</p>
 </div>`);

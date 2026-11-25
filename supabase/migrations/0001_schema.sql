@@ -137,8 +137,8 @@ insert into settings (id, data) values (1, $json$
   },
   "vatRate": 0.095, "invoicePrefix": "",
   "meetingPoint": {
-    "imageUrl": "assets/meeting-point-mock.svg",
-    "text": "Exit the arrivals hall, turn right and walk to the GoOpti van bay (P) — about 2 minutes. Look for the plate on your ticket."
+    "imageUrl": "assets/meeting-point-lju.jpg",
+    "text": "From the arrivals exit, turn right and walk along the terminal past the GoOpti info desk. Cross the road at the pedestrian crossing and turn left to the GoOpti shuttle points 1–2 (departures to Ljubljana and Bled) — about 3 minutes. Look for the plate on your ticket."
   },
   "supportPhone": "+386 00 000 000"
 }

@@ -5,7 +5,7 @@ import { buildInvoicePdf, pdfSafe } from '../../functions/_shared/invoicePdf';
 const view: BookingView = {
   ref: 'LJU-7K3F9Q', status: 'paid', routeCode: 'LJU-BLED', routeName: 'Ljubljana Airport → Bled', destinationLabel: 'Bled — any address',
   departsAt: '2026-11-25T13:30:00.000Z', product: 'shared', passengers: 2, amount: 40, lines: [{ label: '2 × 20.00 €', amount: 40 }],
-  plate: 'LJ-AB-123', meetingPoint: { imageUrl: 'assets/meeting-point-mock.svg', text: 'Turn right after arrivals.' },
+  plate: 'LJ-AB-123', meetingPoint: { imageUrl: 'assets/meeting-point-lju.jpg', text: 'Turn right after arrivals.' },
   supportPhone: '+386 00 000 000', buyerName: 'Ana Novak', holdExpiresAt: null,
 };
 const company = { name: 'Markun Borut d.o.o.', address: 'Cesta 1, 4210 Brnik', vatId: 'SI12345678', regNo: '1234567000', iban: 'SI56 1234', email: 'info@x.si', phone: '+386 1' };
@@ -19,7 +19,7 @@ const inv: InvoiceDoc = {
 test('confirmation email has plate, ref, local time and link, but no internal vehicle name', () => {
   const e = renderConfirmationEmail(view, { baseUrl: 'https://domerome77.github.io/ljubljana-airport/GoOpti-brnik-nov24/', ticketUrl: 'https://t/#/booking/1?t=2', vehicleName: 'Kombi Secret' });
   expect(e.subject).toBe('Your GoOpti transfer · Ljubljana Airport → Bled · 14:30 Wed 25 Nov · LJU-7K3F9Q');
-  for (const s of ['LJ-AB-123', 'LJU-7K3F9Q', '14:30', 'https://t/#/booking/1?t=2', 'https://domerome77.github.io/ljubljana-airport/GoOpti-brnik-nov24/assets/meeting-point-mock.svg', 'Bled']) {
+  for (const s of ['LJ-AB-123', 'LJU-7K3F9Q', '14:30', 'https://t/#/booking/1?t=2', 'https://domerome77.github.io/ljubljana-airport/GoOpti-brnik-nov24/assets/meeting-point-lju.jpg', 'Bled']) {
     expect(e.html).toContain(s);
   }
   expect(e.text).toContain('LJ-AB-123');
